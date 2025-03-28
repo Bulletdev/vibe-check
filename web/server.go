@@ -17,5 +17,5 @@ func StartServer(path string) {
 		issues := scanner.ScanPath(path, false, "")
 		c.JSON(http.StatusOK, issues)
 	})
-	r.Run(":8080")
+	r.Run(":4444")
 }

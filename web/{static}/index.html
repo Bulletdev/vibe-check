@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Vibe Check</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<h1>Vibe Check - Relatório</h1>
+<div id="issues"></div>
+<script>
+    fetch('/scan')
+        .then(response => response.json())
+        .then(data => {
+            const issuesDiv = document.getElementById('issues');
+            data.forEach(issue => {
+                const p = document.createElement('p');
+                p.className = issue.severity.toLowerCase();
+                p.textContent = `${issue.file} [${issue.severity}] Linha ${issue.line}: ${issue.message}`;
+                issuesDiv.appendChild(p);
+            });
+        });
+</script>
+</body>
+</html>

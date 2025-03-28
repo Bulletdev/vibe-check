@@ -11,7 +11,7 @@ O `vibe-check` ajuda times DevOps e de segurança a lidar com o "vibe coding", d
 ## Funcionalidades
 
 - **Linguagens suportadas**: Go (`.go`), Python (`.py`), Java (`.java`), JavaScript (`.js`).
-- **Regras de checagem**:
+- **Regras de checagem**: 
     - **Go**: `http.Get` sem HTTPS, `os/exec`, SQL inseguro, strings hardcoded, erros não tratados.
     - **Python**: `os.system`, `eval/exec`, SQL inseguro, strings hardcoded.
     - **Java**: `Runtime.exec`, JDBC sem SSL, SQL inseguro, strings hardcoded.

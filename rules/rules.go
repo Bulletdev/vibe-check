@@ -4,6 +4,7 @@ import (
 	"go/ast"
 	"go/token"
 	"strings"
+	"vibe-check/config"
 )
 
 type Issue struct {
@@ -14,9 +15,10 @@ type Issue struct {
 }
 
 func CheckGo(file *ast.File, filePath string, fset *token.FileSet) []Issue {
+	config.LoadConfig()
 	var issues []Issue
-
 	ast.Inspect(file, func(n ast.Node) bool {
+
 		// Regra 1: http.Get inseguro
 		if call, ok := n.(*ast.CallExpr); ok {
 			if fun, ok := call.Fun.(*ast.SelectorExpr); ok {
@@ -34,6 +36,7 @@ func CheckGo(file *ast.File, filePath string, fset *token.FileSet) []Issue {
 		}
 
 		// Regra 2: Strings hardcoded
+		
 		if lit, ok := n.(*ast.BasicLit); ok && lit.Kind == token.STRING {
 			if strings.Contains(lit.Value, "localhost") || strings.Contains(lit.Value, "password") {
 				issues = append(issues, Issue{
@@ -49,13 +52,15 @@ func CheckGo(file *ast.File, filePath string, fset *token.FileSet) []Issue {
 		if call, ok := n.(*ast.CallExpr); ok {
 			if fun, ok := call.Fun.(*ast.SelectorExpr); ok {
 				if pkg, ok := fun.X.(*ast.Ident); ok {
-					if pkg.Name == "exec" && (fun.Sel.Name == "Command" || fun.Sel.Name == "Run") {
-						issues = append(issues, Issue{
-							File:     filePath,
-							Pos:      call.Pos(),
-							Severity: "ERRO",
-							Message:  "Uso de os/exec sem sanitização - risco de injeção de comando",
-						})
+					if pkg.Name == "database" && fun.Sel.Name == "Exec" && len(call.Args) > 0 {
+						if lit, ok := call.Args[0].(*ast.BasicLit); ok && strings.Contains(lit.Value, "+") {
+							issues = append(issues, Issue{
+								File:     filePath,
+								Pos:      call.Pos(),
+								Severity: "ERRO",
+								Message:  "SQL com concatenação - risco de SQL Injection",
+							})
+						}
 					}
 				}
 			}

@@ -11,35 +11,28 @@ func CheckJs(tree *sitter.Tree, filePath string, content []byte) []Issue {
 
 	query := `
         (call_expression
-            function: (identifier) @func
-            arguments: (arguments) @args)
+            function: (member_expression
+                object: (identifier) @obj
+                property: (property_identifier) @method)
+            arguments: (arguments (string) @sql))
     `
 	q, _ := sitter.NewQuery([]byte(query), javascript.GetLanguage())
 	qc := sitter.NewQueryCursor()
 	qc.Exec(q, tree.RootNode())
-
 	for {
 		match, ok := qc.NextMatch()
 		if !ok {
 			break
 		}
 		for _, capture := range match.Captures {
-			node := capture.Node
-			text := string(node.Content(content))
-			if q.CaptureName(capture.Index) == "func" {
-				if text == "eval" {
+			if q.CaptureName(capture.Index) == "method" && capture.Node.Content(content) == "query" {
+				sqlArg := match.Captures[2].Node.Content(content)
+				if strings.Contains(sqlArg, "+") || strings.Contains(sqlArg, "${") {
 					issues = append(issues, Issue{
 						File:     filePath,
-						Pos:      token.Pos(node.StartByte()),
+						Pos:      token.Pos(capture.Node.StartByte()),
 						Severity: "ERRO",
-						Message:  "Uso de eval - risco de execução arbitrária",
-					})
-				} else if text == "exec" && strings.Contains(node.Parent().Content(content), "child_process") {
-					issues = append(issues, Issue{
-						File:     filePath,
-						Pos:      token.Pos(node.StartByte()),
-						Severity: "ERRO",
-						Message:  "Uso de child_process.exec - risco de injeção de comando",
+						Message:  "SQL com interpolação - risco de SQL Injection",
 					})
 				}
 			}
